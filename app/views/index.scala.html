@@ -1,0 +1,7 @@
+@(urlForm: Form[URL])
+
+@main(title = "Pixplorer | Check who uses images from your site") {
+  @helper.form(action = routes.Application.pixplorer()) {
+    @helper.inputText(urlForm("url"))
+  }
+}
