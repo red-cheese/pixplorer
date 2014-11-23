@@ -12,3 +12,6 @@ libraryDependencies ++= Seq(
   cache,
   ws
 )
+
+
+libraryDependencies += "net.ruippeixotog" %% "scala-scraper" % "0.1.1"
