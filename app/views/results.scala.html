@@ -1,5 +1,17 @@
-@(url: String)
+@(result: List[Image] = List.empty)
 
 @main(title = "Pixplorer | Check who uses images from your site") {
-  <h1>@url</h1>
+  <div>
+  @for(r <- result) {
+    <div class="img-info">
+      <span>@r.src</span>
+      <span>
+      @for(page <- r.pages) {
+        @page,
+      }
+      </span>
+    </div>
+<br><br>
+  }
+  </div>
 }
