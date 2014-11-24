@@ -1,6 +1,6 @@
 package controllers
 
-import dispatch._, Defaults._
+import dispatch._
 
 /* Scala webscraper to extract image src's from web page */
 import net.ruippeixotog.scalascraper.browser.Browser
@@ -17,8 +17,9 @@ import play.api.data.Forms._
 import play.api.mvc._
 import scala.collection.concurrent._
 import scala.collection.mutable._
-import scala.concurrent.Await
+import scala.concurrent.{blocking, Future, Await}
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 
 case class URL(url: String)
@@ -41,8 +42,8 @@ object Application extends Controller {
   def index = Action {
     Ok(views.html.index(urlForm))
   }
-
-  def reverseSearchGoogle(imgUrl: String) = {
+/*
+  def reverseSearchGoogle2(imgUrl: String) = {
     mmap += imgUrl -> new TrieMap[String, String]
     /* Ask Google reverse image search */
     val gUrlSrc = url("http://www.google.com/searchbyimage?image_url=" + imgUrl)
@@ -66,6 +67,23 @@ object Application extends Controller {
       }
     }
   }
+*/
+  def reverseSearchGoogle(imgUrl: String) : Future[String] = {
+    /* Ask Google reverse image search and return future of result HTML */
+    val userAgent: String = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36"
+    val gUrl = url("http://www.google.com/searchbyimage?image_url=" + imgUrl) <:< Map("User-Agent" -> userAgent)
+    val resFuture = Http.configure(_ setFollowRedirects true)(gUrl OK as.String)
+    println("resFuture")
+    resFuture onComplete {
+      case Success(content) => {
+	println("success")
+      }
+      case Failure(t) => {
+	println("Error: " + t.getMessage)
+      }
+    }
+    return resFuture
+  }
 
   def flush = {
     mmap = new TrieMap
@@ -77,6 +95,7 @@ object Application extends Controller {
       println(mmap)
       flush
       print("flushed")
+      print(urlRedirect)
       Redirect(routes.Application.results(urlRedirect))
     }
   }
@@ -92,7 +111,7 @@ object Application extends Controller {
     val doc = browser.get(url)
     val imgElements: Elements = doc >> elements("img")
     val images: java.util.Iterator[Element] = imgElements.iterator()
-    var imgSrcs = new HashSet[String]
+    var imgSrcs = new HashSet[String] // @TODO: inherit from SortedSet
     while (images.hasNext()) {
       val src = images.next().attr("src")
       // @TODO: Handle local files: append http://domain
@@ -102,9 +121,14 @@ object Application extends Controller {
       }
     }
     imgNum = imgSrcs.size
-    println(imgNum)
-    // @TODO: Add multithreading
-    imgSrcs.foreach(reverseSearchGoogle)
+
+    /* Multitasking with implicit thread pool */
+    val resultFutures: List[Future[String]] = imgSrcs.toList.map {
+      imgSrc => reverseSearchGoogle(imgSrc)
+    }
+    val futureResult: Future[List[String]] = Future.sequence(resultFutures)
+    Await.result(futureResult, 90 seconds) // @TODO: manage blocking more wisely, maybe add exception handler
+
     Ok("ok")
   }
 
