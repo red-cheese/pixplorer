@@ -34,29 +34,20 @@ object Application extends Controller {
 
   val browser = new Browser
 
-  /* This is an ad hoc implementation of concurrent multimap to capture our async reverse image search results */
-  var mmap: TrieMap[String, TrieMap[String, String]] = new TrieMap
-  var imgNum: Int = 0
-  var urlRedirect: String = "/"
-
   def index = Action {
     Ok(views.html.index(urlForm))
   }
 /*
-  def reverseSearchGoogle2(imgUrl: String) = {
-    mmap += imgUrl -> new TrieMap[String, String]
-    /* Ask Google reverse image search */
-    val gUrlSrc = url("http://www.google.com/searchbyimage?image_url=" + imgUrl)
-    val gUrl = gUrlSrc <:< Map("User-Agent" -> "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36")
-    val response: Future[String] = Http.configure(_ setFollowRedirects true)(gUrl OK as.String)
     response onComplete { // Promises are everywhere!
       case Success(content) => {
+
 	val matchElements: Elements = Jsoup.parse(content) >> elements("h3.r a")
 	val matches: java.util.Iterator[Element] = matchElements.iterator()
 	while (matches.hasNext()) {
 	  val href = matches.next().attr("href")
 	  mmap.get(imgUrl).get += href -> href
 	}
+
 	imgNum -= 1
 	renderResultsIfReady
       }
@@ -69,46 +60,31 @@ object Application extends Controller {
   }
 */
   def reverseSearchGoogle(imgUrl: String) : Future[String] = {
-    /* Ask Google reverse image search and return future of result HTML */
+    /* Ask Google reverse image search and return future of results */
     val userAgent: String = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36"
     val gUrl = url("http://www.google.com/searchbyimage?image_url=" + imgUrl) <:< Map("User-Agent" -> userAgent)
     val resFuture = Http.configure(_ setFollowRedirects true)(gUrl OK as.String)
-    println("resFuture")
+    /*
+    /* This is only for debugging purposes */
     resFuture onComplete {
       case Success(content) => {
-	println("success")
+	println("Future resolved")
       }
       case Failure(t) => {
-	println("Error: " + t.getMessage)
+	println("Future rejected. Error: " + t.getMessage)
       }
     }
+    */
     return resFuture
-  }
-
-  def flush = {
-    mmap = new TrieMap
-    imgNum = 0
-  }
-
-  def renderResultsIfReady = {
-    if (imgNum == 0) {
-      println(mmap)
-      flush
-      print("flushed")
-      print(urlRedirect)
-      Redirect(routes.Application.results(urlRedirect))
-    }
   }
 
   def pixplorer = Action { implicit request =>
     val urlData = urlForm.bindFromRequest.get
     val url = urlData.url
-    urlRedirect = url
 
     /* Pixplore! */
 
-    // @TODO: URL must be valid (http://www...)
-    val doc = browser.get(url)
+    val doc = browser.get(url) // @TODO: URL must be valid (http://www...)
     val imgElements: Elements = doc >> elements("img")
     val images: java.util.Iterator[Element] = imgElements.iterator()
     var imgSrcs = new HashSet[String] // @TODO: inherit from SortedSet
@@ -120,16 +96,16 @@ object Application extends Controller {
 	imgSrcs += src
       }
     }
-    imgNum = imgSrcs.size
 
     /* Multitasking with implicit thread pool */
     val resultFutures: List[Future[String]] = imgSrcs.toList.map {
       imgSrc => reverseSearchGoogle(imgSrc)
     }
     val futureResult: Future[List[String]] = Future.sequence(resultFutures)
-    Await.result(futureResult, 90 seconds) // @TODO: manage blocking more wisely, maybe add exception handler
+    val result = Await.result(futureResult, 90 seconds) // @TODO: Manage blocking more wisely, maybe add exception handler
 
-    Ok("ok")
+
+    Ok(result mkString "=====")
   }
 
   def results(url: String) = Action {
