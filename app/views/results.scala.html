@@ -1,15 +1,20 @@
-@(result: List[Image] = List.empty)
+@(url: String, result: List[Image] = List.empty)
 
-@main(title = "Pixplorer | Check who uses images from your site") {
-  <div>
+@main(title = "Pixplorer | Learn who's using images from your site") {
+  <div class="container container-white">
+  <h1 style="text-align: center;">Images from<br><a href="@url">@url</a></h1>
   @for(r <- result) {
-    <div class="img-info">
-      <span><img src=@r.src></span>
-      <span>
+    @if(result.indexOf(r) % 2 == 1) { 
+    <div class="row img-info">
+    } else {
+    <div class="row img-info img-info-gray">
+    }
+      <div class="col-md-6"><img class="img-page" src="@r.src"></div>
+      <div class="col-md-6">
       @for(page <- r.pages) {
-        <div><a href=@page>@page</a></div>
+        <div><a href="@page">@page</a></div>
       }
-      </span>
+      </div>
     </div>
   }
   </div>

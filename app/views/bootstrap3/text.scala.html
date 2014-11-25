@@ -1,0 +1,7 @@
+@(field: Field, label: String = "", placeholder: String = "")
+
+<div class="form-group @if(field.hasErrors) {has-error}">
+  <label for="@field.id" class="sr-only">@label</label>
+  <input type="text" class="form-control" id="@field.id" name="@field.name" value="@field.value.getOrElse("")" placeholder="@placeholder" required="true" />
+  <button class="btn btn-lg btn-block" type="submit">Pixplore!</button>
+</div>

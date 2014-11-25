@@ -1,7 +1,13 @@
+@import bootstrap3._
+
 @(urlForm: Form[URL])
 
-@main(title = "Pixplorer | Check who uses images from your site") {
-  @helper.form(action = routes.Application.pixplorer()) {
-    @helper.inputText(urlForm("url"))
-  }
+@main(title = "Pixplorer | Learn who's using images from your site") {
+  <div class="container">
+    <h1>Pixplorer | Learn who's using images from your site</h1>
+    <h4>Page URL to explore images from:</h4>
+    @helper.form(action = routes.Application.pixplorer()) {
+      @text(urlForm("url"), "Enter page URL:", "htto://www.example.com")
+    }
+  </div>
 }

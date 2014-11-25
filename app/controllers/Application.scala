@@ -17,7 +17,7 @@ import play.api.data.Forms._
 import play.api.mvc._
 import scala.collection.concurrent._
 import scala.collection.mutable._
-import scala.concurrent.{blocking, future, Future, Await}
+import scala.concurrent.{blocking, Future, Await}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
@@ -47,7 +47,7 @@ object Application extends Controller {
     val userAgent: String = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36"
     val gUrl = url("http://www.google.com/searchbyimage?image_url=" + imgUrl) <:< Map("User-Agent" -> userAgent)
 
-    val resFuture: Future[List[String]] = future {
+    val resFuture: Future[List[String]] = Future {
       val gFuture: Future[String] = Http.configure(_ setFollowRedirects true)(gUrl OK as.String)
       val gResult = Await.result(gFuture, 60 seconds) // @TODO: Add exception handler, or avoid blocking
       val result: ListBuffer[String] = new ListBuffer[String]
@@ -82,7 +82,7 @@ object Application extends Controller {
     val doc = browser.get(url) // @TODO: URL must be valid (http://www...)
     val imgElements: Elements = doc >> elements("img")
     val images: java.util.Iterator[Element] = imgElements.iterator()
-    var imgSrcs = new HashSet[String] // @TODO: inherit from SortedSet
+    val imgSrcs = new HashSet[String] // @TODO: inherit from SortedSet
     while (images.hasNext()) {
       val src = images.next().attr("src")
       // @TODO: Handle local files: append http://domain
@@ -99,8 +99,8 @@ object Application extends Controller {
     }
     val futureResult: Future[List[List[String]]] = Future.sequence(resultFutures)
     val result: List[List[String]] = Await.result(futureResult, 90 seconds) // @TODO: Manage blocking more wisely, maybe add exception handler
-    var merge: List[Image] = (imgSrcList zip result).map { case (i, r) => new Image(i, r) }
-    Ok(views.html.results(merge))
+    val merge: List[Image] = (imgSrcList zip result).map { case (i, r) => new Image(i, r) }
+    Ok(views.html.results(url, merge))
   }
 
 }

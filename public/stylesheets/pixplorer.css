@@ -1,0 +1,66 @@
+body {
+    padding-top: 50px;
+    padding-bottom: 50px;
+    text-align: center;
+    color: #555;
+}
+
+.container {
+    padding-top: 3%;
+    padding-bottom: 5%;
+    width: 100%;
+    background-color: #E4C3FF;
+    margin-top: 2%;
+}
+
+.container-white {
+    background-color: #FFF;
+    text-align: left;
+}
+
+form {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.form-control {
+    padding: 10px;
+    font-size: 18px;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+h1 {
+    padding-bottom: 3%;
+}
+
+.btn {
+    background-color: #613B7F;
+    color: white;
+}
+
+.btn:focus, .btn.active, .btn:active, .btn:active:focus, .btn.active:focus, .btn.focus, .btn:active.focus, .btn.active.focus, .btn:hover {
+    background-color: #B69CCC;
+    outline: none;
+}
+
+.img-info {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.img-info-gray {
+    background-color: #EEE;
+}
+
+.img-page {
+    max-width: 600px;
+}
+
+a {
+    color: #613B7F;
+}
+
+a:active, a:hover, a:focus, a:visited {
+    color: #B69CCC;
+}
