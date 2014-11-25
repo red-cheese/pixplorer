@@ -29,7 +29,7 @@ case class Image(src: String, pages: List[String])
 
 object Application extends Controller {
 
-  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(50))
+  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(30))
 
   val urlForm = Form(
     mapping(
