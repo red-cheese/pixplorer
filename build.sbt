@@ -15,5 +15,3 @@ libraryDependencies ++= Seq(
 
 
 libraryDependencies += "net.ruippeixotog" %% "scala-scraper" % "0.1.1"
-
-libraryDependencies += "net.databinder.dispatch" %% "dispatch-core" % "0.11.2"

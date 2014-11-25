@@ -1,6 +1,5 @@
 package controllers
 
-import dispatch._
 import java.util.concurrent.Executors
 
 /* Scala webscraper to extract image src's from web page */
@@ -9,6 +8,7 @@ import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
 
+import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import org.jsoup.Jsoup
@@ -18,10 +18,8 @@ import play.api.data.Forms._
 import play.api.mvc._
 import scala.collection.concurrent._
 import scala.collection.mutable._
-import scala.concurrent.{blocking, Await, Future, ExecutionContext}
-import scala.concurrent.duration._
-//import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Success, Failure}
+import scala.concurrent.{Future, ExecutionContext}
+/* import scala.util.{Success, Failure} */
 
 case class URL(url: String)
 
@@ -47,15 +45,12 @@ object Application extends Controller {
 
   def reverseSearchGoogle(imgUrl: String) : Future[List[String]] = {
     /* Ask Google reverse image search and return future of results */
-    val userAgent: String = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36"
-    val gUrl = url("http://www.google.com/searchbyimage?image_url=" + imgUrl) <:< Map("User-Agent" -> userAgent)
-
+    val uAgent: String = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36"
+    val gUrl = "http://www.google.com/searchbyimage?image_url=" + imgUrl
     val resFuture: Future[List[String]] = Future {
-      val gFuture: Future[String] = Http.configure(_ setFollowRedirects true)(gUrl OK as.String)
-      val gResult = Await.result(gFuture, 60 seconds) // @TODO: Add exception handler, or avoid blocking
       val result: ListBuffer[String] = new ListBuffer[String]
-      val matchElements: Elements = Jsoup.parse(gResult) >> elements("h3.r a")
-      val matches: java.util.Iterator[Element] = matchElements.iterator()
+      val doc: Document = Jsoup.connect(gUrl).userAgent(uAgent).timeout(60 * 1000).get
+      val matches: java.util.Iterator[Element] = doc.getAllElements.select("h3.r a").iterator()
       while (matches.hasNext()) {
 	val href = matches.next().attr("href")
 	result += href
@@ -76,7 +71,7 @@ object Application extends Controller {
     return resFuture
   }
 
-  def pixplorer = Action { implicit request =>
+  def pixplorer = Action.async { implicit request =>
     val urlData = urlForm.bindFromRequest.get
     val url = urlData.url
 
@@ -101,9 +96,7 @@ object Application extends Controller {
       imgSrc => reverseSearchGoogle(imgSrc)
     }
     val futureResult: Future[List[List[String]]] = Future.sequence(resultFutures)
-    val result: List[List[String]] = Await.result(futureResult, 90 seconds) // @TODO: Manage blocking more wisely, maybe add exception handler
-    val merge: List[Image] = (imgSrcList zip result).map { case (i, r) => new Image(i, r) }
-    Ok(views.html.results(url, merge))
+    futureResult.map(res => Ok(views.html.results(url, (imgSrcList zip res).map { case (i, r) => new Image(i, r) })))
   }
 
 }
