@@ -1,6 +1,7 @@
 package controllers
 
 import dispatch._
+import java.util.concurrent.Executors
 
 /* Scala webscraper to extract image src's from web page */
 import net.ruippeixotog.scalascraper.browser.Browser
@@ -17,9 +18,9 @@ import play.api.data.Forms._
 import play.api.mvc._
 import scala.collection.concurrent._
 import scala.collection.mutable._
-import scala.concurrent.{blocking, Future, Await}
+import scala.concurrent.{blocking, Await, Future, ExecutionContext}
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
+//import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 
 case class URL(url: String)
@@ -27,6 +28,8 @@ case class URL(url: String)
 case class Image(src: String, pages: List[String])
 
 object Application extends Controller {
+
+  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(50))
 
   val urlForm = Form(
     mapping(
