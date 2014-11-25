@@ -1,3 +1,25 @@
-Pixplorer: Check who uses images from your site
+Pixplorer | Learn who's using images from your site
+
+http://pixplorer.herokuapp.com/
+
+Version: 0.0.1
+
+WARNING: This is the very first version and may fail sometimes :)
+Please enter only valid URLs
+(e.g. http://www.antipope.org/charlie/blog-static/2014/11/lets-put-the-future-behind-us-1.html
+or https://github.com/red-cheese).
 
 =====
+
+Pixplorer allows you to learn who else is using images on the specified page.
+
+Usage:
+1. Go to http://pixplorer.herokuapp.com/
+2. Enter page URL
+3. Wait for results
+
+Technology stack:
+Scala + Play framework
+Google reverse image search + Dispatch (http://dispatch.databinder.net/Dispatch.html) queries
+Bootstrap 3
+Heroku
